@@ -31,7 +31,7 @@ PUBLISHED:
   bool get_active();
 
 protected:
-  virtual void get_render_flags(SteamAudioProcessor::source_properties* source);
+  virtual void get_render_flags(SteamAudioProcessor::source_properties* source, bool is_listener = false);
   virtual IPLAudioBuffer& apply_effect(SteamAudioProcessor::SteamGlobalHolder* globals, IPLAudioBuffer& inBuffer);
   bool _isActive;
 

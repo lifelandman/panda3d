@@ -65,7 +65,7 @@ PUBLISHED:
 
 
 protected:
-  virtual void get_render_flags(SteamAudioProcessor::source_properties* source) override;
+  virtual void get_render_flags(SteamAudioProcessor::source_properties* source, bool is_listener = false) override;
   virtual IPLAudioBuffer& apply_effect(SteamAudioProcessor::SteamGlobalHolder* globals, IPLAudioBuffer& inBuffer) override;
 
   unsigned short _dist_atten;//IPL_DIRECTEFFECTFLAGS_APPLYDISTANCEATTENUATION
@@ -87,8 +87,6 @@ protected:
 
   unsigned short _transmission;//IPL_DIRECTEFFECTFLAGS_APPLYTRANSMISSION
   float _trans_amnt[3];
-
-  void sa_coordinate_transform(float x1, float y1, float z1, IPLVector3& vals);
 
   //TODO:: allow users to set different models for the sub-effects.
   //TODO:: allow this class to use a scene to run spatial simulations.

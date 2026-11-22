@@ -65,7 +65,7 @@ SteamDirectEffect::
 *
 **/
 void SteamDirectEffect::
-get_render_flags(SteamAudioProcessor::source_properties* source) {
+get_render_flags(SteamAudioProcessor::source_properties* source, bool is_listener) {
   source->inputs.flags = IPLSimulationFlags(source->inputs.flags | IPL_SIMULATIONFLAGS_DIRECT);
 
   //Set flags for calculations
@@ -98,7 +98,8 @@ get_render_flags(SteamAudioProcessor::source_properties* source) {
 }
 
 /**
-*returns a blank outBuffer. This shouldn't be called, though.
+*returns a buffer with the direct effect applied.
+* TODO:: make sad_generate cases retrieve simulator results.
 **/
 IPLAudioBuffer& SteamDirectEffect::
 apply_effect(SteamAudioProcessor::SteamGlobalHolder *globals, IPLAudioBuffer& inBuffer) {

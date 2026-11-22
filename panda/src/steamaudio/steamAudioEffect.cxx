@@ -55,8 +55,15 @@ get_active() {
   return _isActive;
 }
 
+/**
+*is_listener is defined for audio effects that a programmer would likely prefer to run globally despite
+* a buffer otherwise using a unique source.
+* The specific behavior might be different if an effect is processed from the listener's pov, so
+* this flag is defined to set up the listener accordingly.
+* I expect this to only be used for reflections and pathing...
+**/
 void SteamAudioEffect::
-get_render_flags(SteamAudioProcessor::source_properties* source) {
+get_render_flags(SteamAudioProcessor::source_properties* source, bool is_listener) {
 
 }
 

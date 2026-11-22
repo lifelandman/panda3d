@@ -25,11 +25,13 @@ TypeHandle SteamAudioProcessor::_type_handle;
 
 /**
 *
-* frame_rate sets how long a segment of audio is processed when render_effects is called.
+* frame_size sets how long a segment of audio is processed when render_effects is called.
 * Essentially, audio sources and moving objects do not move in steam audio's simulations
 * during a single "frame".
 * It's a good idea to tie the frame size with how often you pass updated positions to this class.
 * (Or vice-versa.)
+*
+* In the future, there may be ways to render particular effects; like occlusion; more frequently. In this case, frame_size should be the largest delay any effect has before being re-rendered.
 *
 * sample rate is both the rate that steam audio processes sound, and the rate at which it will be played back, regardless the rate of any audio you buffer in.
 *
@@ -184,16 +186,26 @@ buffer_audio(MovieAudioCursor& cursor, int samples, std::string source) {
 
   float resampleRatio = static_cast<float>(_sample_rate) / cursorRate;
 
-  float compatibleSamples[4096];//always set to two as we always want a two-channel buffer internally
+  float channel1[4096];//Seperate the samples now,
+  float channel2[4096];//as steam audio uses seperate arrays anyways.
 
   float sixteenToThirtyTwoScale = 1.0f / 32768.0f;
-  if (resampleRatio == 1) {//No need to resample
-    for (unsigned int i = 0; i < _frame_size * numChannels; ++i) {
-      compatibleSamples[i] = static_cast<float>(rawSamples[i]) * sixteenToThirtyTwoScale;
+  if (numChannels == 1) {//Only one channel, copy data over
+    for (unsigned int i = 0; i < _frame_size; ++i) {
+      float floatSample = static_cast<float>(rawSamples[i]) * sixteenToThirtyTwoScale;
+      channel1[i] = floatSample;
+      channel2[i] = floatSample;
     }
   }
-  else {//source rate is different than our rate
-    for (unsigned int i = 0; i < _frame_size * numChannels; ++i) {
+  else {//samples are interleaved, deinterleaving
+    for (unsigned int i = 0; i < _frame_size * 2; i += 2) {
+      channel1[i] = static_cast<float>(rawSamples[i]) * sixteenToThirtyTwoScale;
+      channel2[i + 1] = static_cast<float>(rawSamples[i + 1]) * sixteenToThirtyTwoScale;
+    }
+  }
+
+  if (resampleRatio != 1) {//source rate is different than our rate
+    for (unsigned int i = 0; i < _frame_size; i++) {
       float j = static_cast<float>(i) / resampleRatio;//The actual index representing the timepoint we're attempting to get a sample for
       int j0 = floor(j);
       int j1 = j0 + 1;
@@ -202,9 +214,8 @@ buffer_audio(MovieAudioCursor& cursor, int samples, std::string source) {
 
       if (j1 > numInptSamples) { j1 = numInptSamples; }
 
-      float interpSample = ((1 - offset) * rawSamples[j0]) + (offset * rawSamples[j1]);
-
-      compatibleSamples[i] = interpSample * sixteenToThirtyTwoScale;//finish off by changing sample format to 32 bit float
+      channel1[i] = ((1 - offset) * channel1[j0]) + (offset * channel1[j1]);
+      channel2[i] = ((1 - offset) * channel2[j0]) + (offset * channel2[j1]);
     }
   }
 
@@ -218,21 +229,12 @@ buffer_audio(MovieAudioCursor& cursor, int samples, std::string source) {
   //newBuffer->buffer = IPLAudioBuffer{};
   iplAudioBufferAllocate(_steamContext, 2, _frame_size, &(newBuffer->buffer));
 
-  if (numChannels == 1) {//we need to pad the data and put it in without deinterleaving.
-    for (unsigned int i = 0; i < _frame_size; i++) {
-      compatibleSamples[i + _frame_size] = compatibleSamples[i];
-    }
-    for (unsigned int i = 0; i < _frame_size * 2; i++) {
-      if (i < _frame_size) {
-        newBuffer->buffer.data[0][i] = compatibleSamples[i];
-      }
-      else {
-        newBuffer->buffer.data[1][i - _frame_size] = compatibleSamples[i];//fill the second channel
-      }
-    }
-  }
-  else {
-    iplAudioBufferDeinterleave(_steamContext, compatibleSamples, &(newBuffer->buffer));
+  for (unsigned int i = 0; i < _frame_size; i++) {//Copy data into the buffer.
+    //Since this loop only goes up to _frame_size,
+    //We don't copy more samples than we need even if we read extra samples for resampling.
+    newBuffer->buffer.data[0][i] = channel1[i];
+      
+    newBuffer->buffer.data[1][i] = channel2[i];
   }
   
 
@@ -350,8 +352,12 @@ render_effects() {
     return;
   }
 
-  IPLAudioBuffer finalBuffer = IPLAudioBuffer{};
+  IPLAudioBuffer finalBuffer;
   iplAudioBufferAllocate(_steamContext, 2, _frame_size, &finalBuffer);
+
+  for (auto i = 0; i < finalBuffer.numChannels; i++) {
+    memset(finalBuffer.data[i], 0.0f, finalBuffer.numSamples * sizeof(IPLfloat32));//Extra caution since this buffer is unique
+  }//In that it isn't filled before being mixed into.
 
   //TODO:: delete buffered audio. Use the delete keyword!!
   //TODO:: remember to select if a reflection mixer is used based on the model!
@@ -369,13 +375,17 @@ render_effects() {
   }
 
   //Iterate over sources and prepare effects
-  for (auto s2 = _sources.begin(); s2 != _sources.end(); s2++)
+  //TODO::This can be optimized, build a bitmask for the source and
+  //dont set flags for effects that won't be applied
+  for (auto e1 = 0; e1 < _steam_effects.size(); e1++)
   {
-    for (auto e1 = 0; e1 < _steam_effects.size(); e1++)
+    _steam_effects[e1]->get_render_flags(&_listener, true);
+    for (auto s2 = _sources.begin(); s2 != _sources.end(); s2++)
     {
       _steam_effects[e1]->get_render_flags(s2->second.get());
     }
   }
+  
 
   //run simulation
   iplSimulatorRunDirect(_simulator);
@@ -402,7 +412,7 @@ render_effects() {
       IPLAudioBuffer result = _steam_effects[e2]->apply_effect(&globals, (*b1)->buffer);
 
       int sampleNum = int((*b1)->buffer.numSamples);
-      for (auto i = 0; i < sampleNum; i++) {
+      for (auto i = 0; i < 2; i++) {//i < 2 because we use 2 channels internally, ALWAYS
         //delete *b1->buffer.data[i];
         (*b1)->buffer.data[i] = result.data[i];
       }
