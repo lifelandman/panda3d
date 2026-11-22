@@ -26,7 +26,8 @@ TypeHandle SteamAudioEffect::_type_handle;
 /**
 *
 **/
-SteamAudioEffect::SteamAudioEffect() :
+SteamAudioEffect::
+SteamAudioEffect() :
   _isActive(true)
 {
 
@@ -35,7 +36,8 @@ SteamAudioEffect::SteamAudioEffect() :
 /**
 *
 **/
-SteamAudioEffect::~SteamAudioEffect() {
+SteamAudioEffect::
+~SteamAudioEffect() {
 
 }
 

@@ -16,6 +16,7 @@
 
 #include "steamAudioEffect.h"
 #include "steamDirectEffect.h"
+#include "steamBinauralEffect.h"
 
 #include "pandaSystem.h"
 #include "dconfig.h"
@@ -49,6 +50,7 @@ init_libsteamaudio() {
 
   SteamAudioEffect::init_type();
   SteamDirectEffect::init_type();
+  SteamBinauralEffect::init_type();
 
   PandaSystem* ps = PandaSystem::get_global_ptr();
   ps->add_system("SteamAudio");

@@ -22,6 +22,9 @@
 
 TypeHandle SteamAudioProcessor::_type_handle;
 
+bool SteamAudioProcessor::_steam_audio_active = false;
+_steamContext = IPLContext{};//temporary and invalid; constructed proper in processor construction
+
 
 /**
 *
@@ -48,12 +51,16 @@ SteamAudioProcessor() {
   _audio_settings->samplingRate = _sample_rate;
   _audio_settings->frameSize = _frame_size;
 
-  //create context
-  IPLContextSettings contextSettings{};
-  contextSettings.version = STEAMAUDIO_VERSION;
+  if (!_steam_audio_active) {
+    //create context
+    IPLContextSettings contextSettings{};
+    contextSettings.version = STEAMAUDIO_VERSION;
 
-  _steamContext = IPLContext{};
-  iplContextCreate(&contextSettings, &_steamContext);
+    _steamContext = IPLContext{};
+    iplContextCreate(&contextSettings, &_steamContext);
+
+    _steam_audio_active = true
+  }
 
   //create simulator
   _simulation_settings = IPLSimulationSettings{};
@@ -101,13 +108,11 @@ sa_coordinate_transform(float x1, float y1, float z1, IPLVector3& vals) {
 **/
 bool SteamAudioProcessor::
 make_source(std::string source_name) {
-  if ((_sources.count(source_name) < 1) && _sources.max_size() > _sources.size())
-  {
+  if ((_sources.count(source_name) < 1) && _sources.max_size() > _sources.size()) {
     _sources.emplace(source_name, std::make_unique<source_properties>(&_simulator));
       return true;
   }
-  else
-  {
+  else {
     return false;
   }
 }
@@ -367,21 +372,19 @@ render_effects() {
   globals._channels = 2;
   globals._samples = _frame_size;
   globals.listenerPosition = _listener.sourcePos;
+  globals.listener = &_listener;
 
   //reset source inputs
-  for (auto s1 = _sources.begin(); s1 != _sources.end(); s1++)
-  {
+  for (auto s1 = _sources.begin(); s1 != _sources.end(); s1++) {
     s1->second->inputs = {};
   }
 
   //Iterate over sources and prepare effects
   //TODO::This can be optimized, build a bitmask for the source and
   //dont set flags for effects that won't be applied
-  for (auto e1 = 0; e1 < _steam_effects.size(); e1++)
-  {
+  for (auto e1 = 0; e1 < _steam_effects.size(); e1++) {
     _steam_effects[e1]->get_render_flags(&_listener, true);
-    for (auto s2 = _sources.begin(); s2 != _sources.end(); s2++)
-    {
+    for (auto s2 = _sources.begin(); s2 != _sources.end(); s2++) {
       _steam_effects[e1]->get_render_flags(s2->second.get());
     }
   }
@@ -392,22 +395,18 @@ render_effects() {
   //Todo:: add other simulator calls
 
   //Apply the effects
-  for (auto b1 = _buffers.begin(); b1 != _buffers.end(); b1++)
-  {
+  for (auto b1 = _buffers.begin(); b1 != _buffers.end(); b1++) {
 
     //get source
-    if ((*b1)->isGlobal)//The sound is global, aka played from the listener's position.
-    {
+    if ((*b1)->isGlobal) {//The sound is global, aka played from the listener's position.
       globals.source = &_listener;
     }
-    else
-    {
+    else {
       globals.source = _sources[(*b1)->sourceName].get();
     }
 
     //run buffer through effects
-    for (unsigned int e2 = 0; e2 < _steam_effects.size(); e2++)
-    {
+    for (unsigned int e2 = 0; e2 < _steam_effects.size(); e2++) {
       //TODO::continue if effect mask does not match any bits of source mask
       IPLAudioBuffer result = _steam_effects[e2]->apply_effect(&globals, (*b1)->buffer);
 

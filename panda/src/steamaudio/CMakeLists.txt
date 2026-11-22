@@ -4,10 +4,11 @@ if(HAVE_STEAMAUDIO)
     steamAudioProcessor.h
     steamAudioEffect.h
     steamDirectEffect.h
+    steamBinauralEffect.h
   )
 
   set(P3STEAMAUDIO_SOURCES
-    config_steamaudio.cxx steamAudioProcessor.cxx steamAudioEffect.cxx steamDirectEffect.cxx
+    config_steamaudio.cxx steamAudioProcessor.cxx steamAudioEffect.cxx steamDirectEffect.cxx steamBinauralEffect.cxx
   )
 
 

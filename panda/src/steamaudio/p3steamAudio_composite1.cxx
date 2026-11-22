@@ -3,3 +3,4 @@
 #include "steamAudioProcessor.cxx"
 #include "steamAudioEffect.cxx"
 #include "steamDirectEffect.cxx"
+#include "steamBinauralEffect.cxx"

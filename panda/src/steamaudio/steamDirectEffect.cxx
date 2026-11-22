@@ -29,7 +29,8 @@ TypeHandle SteamDirectEffect::_type_handle;
 /**
 *
 **/
-SteamDirectEffect::SteamDirectEffect() :
+SteamDirectEffect::
+SteamDirectEffect() :
   SteamAudioEffect(),
   _dist_atten(SAD_GENERATE),
   _dist_atten_amnt(0.6f),

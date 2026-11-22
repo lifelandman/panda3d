@@ -34,6 +34,7 @@ class UserDataAudio;
 
 class SteamAudioEffect;
 class SteamDirectEffect;
+class SteamBinauralEffect;
 
 /**
 *This class is what processes audio data and applies steam audio effects.
@@ -42,6 +43,9 @@ class EXPCL_STEAM_AUDIO SteamAudioProcessor : public TypedReferenceCount {
 PUBLISHED:
   SteamAudioProcessor();
   ~SteamAudioProcessor();
+
+  static bool _steam_audio_active;//track if the context has been made.
+  //context will be made once at least one instance of this class has been constructed.
 
   //source methods
   bool make_source(std::string source_name);
@@ -82,6 +86,11 @@ PUBLISHED:
 protected:
   friend class SteamAudioEffect;
   friend class SteamDirectEffect;
+  friend class SteamBinauralEffect;
+
+  static IPLContext _steamContext;
+  IPLSimulator _simulator;
+  IPLSimulationSettings _simulation_settings;
 
   void sa_coordinate_transform(float x1, float y1, float z1, IPLVector3& vals);
 
@@ -132,8 +141,6 @@ protected:
   source_properties _listener;
 
 private:
-  IPLSimulator _simulator;
-  IPLSimulationSettings _simulation_settings;
 
   //effects
   typedef pvector<PT(SteamAudioEffect)> SAEffects;//not ideal to use regular pointers instead of PT, but my hand is forced
@@ -142,8 +149,6 @@ private:
   //configuration
   unsigned int _frame_size;
   unsigned int _sample_rate;
-
-  IPLContext _steamContext;//This risks being inefficient; but we don't have any near-gaurentee that we'll be used at app startup like the audio system
 
   //output
   pvector<int16_t> output_samples;
@@ -164,6 +169,7 @@ public:
     int _samples = 0;
     source_properties* source = nullptr;
     IPLVector3 listenerPosition = IPLVector3{};
+    source_properties* listener = nullptr
   };
 
 public:
