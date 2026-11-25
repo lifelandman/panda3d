@@ -36,6 +36,8 @@ class SteamAudioEffect;
 class SteamDirectEffect;
 class SteamBinauralEffect;
 
+class SteamAudioSceneNode;
+
 /**
 *This class is what processes audio data and applies steam audio effects.
 **/
@@ -43,9 +45,6 @@ class EXPCL_STEAM_AUDIO SteamAudioProcessor : public TypedReferenceCount {
 PUBLISHED:
   SteamAudioProcessor();
   ~SteamAudioProcessor();
-
-  static bool _steam_audio_active;//track if the context has been made.
-  //context will be made once at least one instance of this class has been constructed.
 
   //source methods
   bool make_source(std::string source_name);
@@ -88,6 +87,10 @@ protected:
   friend class SteamDirectEffect;
   friend class SteamBinauralEffect;
 
+  friend class SteamAudioSceneNode;
+
+  static bool _steam_audio_active;//track if the context has been made.
+  //context will be made once at least one instance of this class has been constructed.
   static IPLContext _steamContext;
   IPLSimulator _simulator;
   IPLSimulationSettings _simulation_settings;

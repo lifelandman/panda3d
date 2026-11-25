@@ -3395,6 +3395,9 @@ if not PkgSkip("BULLET"):
     CopyAllHeaders('panda/src/bullet')
     CopyAllHeaders('panda/metalibs/pandabullet')
 
+if not PkgSkip("STEAMAUDIO"):
+    CopyAllHeaders("panda/src/steamaudio")
+
 if not PkgSkip("SPEEDTREE"):
     CopyAllHeaders('contrib/src/speedtree')
 

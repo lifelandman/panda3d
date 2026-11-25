@@ -43,7 +43,8 @@ _steamContext = IPLContext{};//temporary and invalid; constructed proper in proc
 * _frame_size cannot be larger than 4096.
 **/
 SteamAudioProcessor::
-SteamAudioProcessor() {
+SteamAudioProcessor()
+{
   _frame_size = 512;
   _sample_rate = 44100;
 
@@ -83,6 +84,7 @@ SteamAudioProcessor::
   _listener.destroy();
 
   _buffers.clear();
+
   _steam_effects.clear();
 
   delete _audio_settings;
@@ -382,7 +384,8 @@ render_effects() {
   //Iterate over sources and prepare effects
   //TODO::This can be optimized, build a bitmask for the source and
   //dont set flags for effects that won't be applied
-  for (auto e1 = 0; e1 < _steam_effects.size(); e1++) {
+  for (unsigned int e1 = 0; e1 < _steam_effects.size(); e1++) {
+    if (!(_steam_effects[e1]->_isActive)) { return; }
     _steam_effects[e1]->get_render_flags(&_listener, true);
     for (auto s2 = _sources.begin(); s2 != _sources.end(); s2++) {
       _steam_effects[e1]->get_render_flags(s2->second.get());
@@ -407,6 +410,8 @@ render_effects() {
 
     //run buffer through effects
     for (unsigned int e2 = 0; e2 < _steam_effects.size(); e2++) {
+      if (!(_steam_effects[e2]->_isActive)) { return; }
+
       //TODO::continue if effect mask does not match any bits of source mask
       IPLAudioBuffer result = _steam_effects[e2]->apply_effect(&globals, (*b1)->buffer);
 

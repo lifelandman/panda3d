@@ -76,6 +76,7 @@ LangString DESC_SecOpenGL ${LANG_ENGLISH} "The OpenGL graphics back-end is the m
 LangString DESC_SecDirect3D9 ${LANG_ENGLISH} "The optional Direct3D 9 renderer."
 LangString DESC_SecOpenAL ${LANG_ENGLISH} "Support for playing audio via the OpenAL library.  You need either OpenAL or FMOD to be able to play audio."
 LangString DESC_SecFMOD ${LANG_ENGLISH} "Support for decoding and playing audio via the FMOD Ex library.  You need either OpenAL or FMOD to be able to play audio."
+LangString DESC_SecSteamAudio ${LANG_ENGLISH} "Support for using Steam Audio for various audio effects, such as spatialization."
 LangString DESC_SecFFMpeg ${LANG_ENGLISH} "Support for decoding video and audio via the FFMpeg library.  Without this option, Panda3D will only be able to play .wav and .ogg audio files."
 LangString DESC_SecBullet ${LANG_ENGLISH} "Support for the Bullet physics engine."
 LangString DESC_SecODE ${LANG_ENGLISH} "Support for the Open Dynamics Engine to implement physics."
@@ -153,6 +154,14 @@ var READABLE
         File /nonfatal /r "${BUILT}\panda3d\vrpn${EXT_SUFFIX}"
         File /nonfatal /r "${BUILT}\panda3d\steamaudio${EXT_SUFFIX}"
 
+        !ifdef HAVE_STEAMAUDIO
+            SectionGetFlags ${SecSteamAudio} $R0
+            IntOp $R0 $R0 & ${SF_SELECTED}
+            StrCmp $R0 ${SF_SELECTED} 0 SkipSteamAudioPyd
+            File /nonfatal /r "${BUILT}\panda3d\steamaudio${EXT_SUFFIX}"
+            SkipSteamAudioPyd:
+        !endif
+
         !ifdef HAVE_BULLET
             SectionGetFlags ${SecBullet} $R0
             IntOp $R0 $R0 & ${SF_SELECTED}
@@ -212,7 +221,7 @@ SectionGroup "Panda3D Libraries"
         File /r "${BUILT}\etc\*"
 
         SetOutPath $INSTDIR\bin
-        File /r /x api-ms-win-*.dll /x ucrtbase.dll /x libpandagl.dll /x libpandadx9.dll /x cgD3D*.dll /x python*.dll /x libpandaode.dll /x libp3fmod_audio.dll /x fmodex*.dll /x libp3ffmpeg.dll /x av*.dll /x postproc*.dll /x swscale*.dll /x swresample*.dll /x NxCharacter*.dll /x cudart*.dll /x PhysX*.dll /x libpandaphysx.dll /x libp3rocket.dll /x boost_python*.dll /x Rocket*.dll /x _rocket*.pyd /x libpandabullet.dll /x OpenAL32.dll /x *_oal.dll /x libp3openal_audio.dll "${BUILT}\bin\*.dll"
+        File /r /x api-ms-win-*.dll /x ucrtbase.dll /x libpandagl.dll /x libpandadx9.dll /x cgD3D*.dll /x python*.dll /x libpandaode.dll /x libp3fmod_audio.dll /x fmodex*.dll /x libp3ffmpeg.dll /x libp3steam_audio.dll /x av*.dll /x postproc*.dll /x swscale*.dll /x swresample*.dll /x NxCharacter*.dll /x cudart*.dll /x PhysX*.dll /x libpandaphysx.dll /x libp3rocket.dll /x boost_python*.dll /x Rocket*.dll /x _rocket*.pyd /x libpandabullet.dll /x OpenAL32.dll /x *_oal.dll /x libp3openal_audio.dll "${BUILT}\bin\*.dll"
         File /nonfatal /r "${BUILT}\bin\Microsoft.*.manifest"
 
         ; Before Windows 10, we need these stubs for the UCRT as well.
@@ -288,6 +297,16 @@ SectionGroup "Panda3D Libraries"
         File /nonfatal /r "${BUILT}\bin\swscale*.dll"
         File /nonfatal /r "${BUILT}\bin\swresample*.dll"
         File /nonfatal /r "${BUILT}\bin\postproc*.dll"
+    SectionEnd
+    !endif
+
+    !ifdef HAVE_STEAMAUDIO
+    Section "Steam Audio" SecSteamAudio
+        SectionIn 1 2
+
+        SetOutPath "$INSTDIR\bin"
+        File "${BUILT}\bin\phonon.dll"
+        File "${BUILT}\bin\libp3steam_audio.dll"
     SectionEnd
     !endif
 
@@ -926,6 +945,8 @@ SectionEnd
   !ifdef HAVE_FFMPEG
     !insertmacro MUI_DESCRIPTION_TEXT ${SecFFMpeg} $(DESC_SecFFMpeg)
   !endif
+  !ifdef HAVE_STEAMAUDIO
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecSteamAudio} $(DESC_SecSteamAudio)
   !ifdef HAVE_BULLET
     !insertmacro MUI_DESCRIPTION_TEXT ${SecBullet} $(DESC_SecBullet)
   !endif
