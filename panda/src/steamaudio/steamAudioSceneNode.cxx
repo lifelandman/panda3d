@@ -102,7 +102,7 @@ add_material(std::string name, float air_low, float air_mid, float air_hi, float
 * so there can be multiple implementations of providing the geoms for one.
 **/
 IPLStaticMesh SteamAudioSceneNode::
-build_mesh(meshBuildArgs args) {//TODO:: add transform param
+build_mesh(meshBuildArgs args, LMatrix4* transform) {//TODO:: add transform param
   pvector<IPLVector3> vertices;
   pvector<IPLTriangle> triangles;
   pvector<IPLMaterial> materials;
@@ -150,6 +150,10 @@ build_mesh(meshBuildArgs args) {//TODO:: add transform param
     while (!vertex.is_at_end()) {
       LVector3 v = vertex.get_data3();
 
+      if (transform != nullptr) {
+        v = (LVector3)(transform->xform_vec(v));
+      }
+
       vertices.push_back({ v.get_x(), v.get_z(), -v.get_y() });
 
       numFoundVerts++
@@ -176,6 +180,8 @@ build_mesh(meshBuildArgs args) {//TODO:: add transform param
 * Adds a Geom to this node's internal Steam Audio scene.
 * This isn't particularly semantically efficeint, but it may be ideal for a more custom way
 * of adding geometry.
+*
+* geometry is assumed to be relative to this node.
 **/
 void SteamAudioSceneNode::
 add_gemometry(const Geom &geometry, std::string material) {
@@ -190,31 +196,34 @@ add_gemometry(const Geom &geometry, std::string material) {
 * Iterates through a nodepath's decendents and adds all encountered GeomNodes to this node's scene.
 * Additionally, this function will try to match the name of the base texture of a geom to any coorisponding
 * audio materials.
+*
+* All geometry is assumed to be relative to this nodepath, so it's probably a good idea to keep this node
+* uniform with whatever nodepath you scan from.
 **/
 void SteamAudioSceneNode::
 add_scene(NodePath root) {//NOT IMPLEMENTED!!
-  NodePathCollection geomNodeCollection = model.find_all_matches("**/+GeomNode");
+  NodePathCollection geomNodeCollection = root.find_all_matches("**/+GeomNode");
 
-  meshBuildArgs args;
+  meshBuildArgs args = {};
 
   for (auto i = 0; i < geomNodeCollection.get_num_paths(); ++i) {
-    PT(GeomNode) g = DCAST(GeomNode, geomNodeCollection.get_path(i).node());
+    PT(GeomNode) geomnode = DCAST(GeomNode, geomNodeCollection.get_path(i).node());
 
-    for (auto j = 0; j < g->get_num_geoms(); ++j) {
+    for (auto j = 0; j < geomnode->get_num_geoms(); ++j) {
       PT(Geom) geom = geomnode->get_geom(j);
       RenderState state = geomnode->get_geom_state(j);
 
       std::string matName = "generic";
       if (state.has_attrib(TextureAttrib.get_class_type())) {
         Texture tex = state.get_attrib(TextureAttrib.get_class_type()).get_texture();
-        if (if tex != nullptr && _materials.find(tex.get_name()) != _materials.end())) {
+        if (if tex != NULL && _materials.find(tex.get_name()) != _materials.end())) {
           matName = tex.get_name();
         }
       }
 
       args.push_back({geom, matName});
     }
-    IPLStaticMesh mesh = build_mesh(args);
+    IPLStaticMesh mesh = build_mesh(args, root.get_mat(geomNodeCollection.get_path(i)));
 
     iplStaticMeshAdd(mesh, _scene);
   }

@@ -58,7 +58,7 @@ protected:
 private:
   typedef std::pair<PT(Geom), std::string> meshBuildArg;
   typedef pvector<meshBuildArg> meshBuildArgs;
-  IPLStaticMesh build_mesh(meshBuildArgs args);
+  IPLStaticMesh build_mesh(meshBuildArgs args, LMatrix4* transform = nullptr);
 
 public:
   static TypeHandle get_class_type() {
