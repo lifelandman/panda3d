@@ -377,8 +377,8 @@ render_effects() {
   globals.listener = &_listener;
 
   //reset source inputs
-  for (auto s1 = _sources.begin(); s1 != _sources.end(); s1++) {
-    s1->second->inputs = {};
+  for (auto s = _sources.begin(); s != _sources.end(); s++) {
+    s->second->inputs = {};
   }
 
   //Iterate over sources and prepare effects
@@ -387,8 +387,8 @@ render_effects() {
   for (unsigned int e1 = 0; e1 < _steam_effects.size(); e1++) {
     if (!(_steam_effects[e1]->_isActive)) { return; }
     _steam_effects[e1]->get_render_flags(&_listener, true);
-    for (auto s2 = _sources.begin(); s2 != _sources.end(); s2++) {
-      _steam_effects[e1]->get_render_flags(s2->second.get());
+    for (auto s = _sources.begin(); s != _sources.end(); s++) {
+      _steam_effects[e1]->get_render_flags(s->second.get());
     }
   }
   
@@ -396,6 +396,13 @@ render_effects() {
   //run simulation
   iplSimulatorRunDirect(_simulator);
   //Todo:: add other simulator calls
+
+  //grab outputs for each source
+  for (auto s = _sources.begin(); s != _sources.end(); s++) {
+    auto source = s->second.get();
+    iplSourceGetOutputs(*(source->source), source->inputs.flags, &(source->outputs));
+  }
+  iplSourceGetOutputs(*(_listener.source), _listener.inputs.flags, &(_listener.outputs));//Get listener outputs
 
   //Apply the effects
   for (auto b1 = _buffers.begin(); b1 != _buffers.end(); b1++) {
@@ -547,6 +554,7 @@ initialize(IPLSimulator* _simulator) {
   iplSourceCreate(*_simulator, &sourceSettings, &source);
 
   inputs = IPLSimulationInputs{};
+  outputs = IPLSimulationOutputs{};
   //flags are set when a source is added or modified.
   inputs.source = sourceCoord;
 

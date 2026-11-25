@@ -115,7 +115,8 @@ apply_effect(SteamAudioProcessor::SteamGlobalHolder *globals, IPLAudioBuffer& in
   IPLDirectEffect effect = nullptr;
   iplDirectEffectCreate(*globals->_steam_context, globals->_audio_settings, &effectSettings, &effect);
 
-  IPLDirectEffectParams params{};
+  IPLDirectEffectParams params = globals->source->outputs.direct;
+  params.flags = IPLDirectEffectFlags{};
 
   IPLVector3 sourcePosition = globals->source->sourcePos;//Steam audio +y = up, and -z = forward
 
@@ -128,10 +129,7 @@ apply_effect(SteamAudioProcessor::SteamGlobalHolder *globals, IPLAudioBuffer& in
     break;
   case SAD_GENERATE:
     params.flags = static_cast<IPLDirectEffectFlags>(params.flags | IPL_DIRECTEFFECTFLAGS_APPLYDISTANCEATTENUATION);
-    IPLDistanceAttenuationModel distanceAttenuationModel{};
-    distanceAttenuationModel.type = IPL_DISTANCEATTENUATIONTYPE_DEFAULT;
-    float distanceAttenuation = iplDistanceAttenuationCalculate(*globals->_steam_context, sourcePosition, listenerPosition, &distanceAttenuationModel);
-    params.distanceAttenuation = distanceAttenuation;
+    _dist_atten_amnt = params.distanceAttenuation;
     break;
   }
 
@@ -144,9 +142,9 @@ apply_effect(SteamAudioProcessor::SteamGlobalHolder *globals, IPLAudioBuffer& in
     break;
   case SAD_GENERATE:
     params.flags = static_cast<IPLDirectEffectFlags>(params.flags | IPL_DIRECTEFFECTFLAGS_APPLYAIRABSORPTION);
-    IPLAirAbsorptionModel airAbsorptionModel{};
-    airAbsorptionModel.type = IPL_AIRABSORPTIONTYPE_DEFAULT;
-    iplAirAbsorptionCalculate(*globals->_steam_context, sourcePosition, listenerPosition, &airAbsorptionModel, params.airAbsorption);
+    _air_eq[0] = params.airAbsorption[0];
+    _air_eq[1] = params.airAbsorption[1];
+    _air_eq[2] = params.airAbsorption[2];
     break;
   }
 
@@ -157,25 +155,35 @@ apply_effect(SteamAudioProcessor::SteamGlobalHolder *globals, IPLAudioBuffer& in
     break;
   case SAD_GENERATE:
     params.flags = static_cast<IPLDirectEffectFlags>(params.flags | IPL_DIRECTEFFECTFLAGS_APPLYDIRECTIVITY);
-    IPLDirectivity directivity{};
-    directivity.dipoleWeight = _dipole_amnt;
-    directivity.dipolePower = _dipole_pwr;
-
-    IPLCoordinateSpace3 sourceCoordinates = globals->source->sourceCoord;
-
-    params.directivity = iplDirectivityCalculate(*globals->_steam_context, sourceCoordinates, listenerPosition, &directivity);
+    _directivity_amnt = params.directivity;
     break;
   }
 
-  if (_occlusion == SAD_USER) {
+  switch (_occlusion) {//Directivity
+  case SAD_USER:
     params.flags = static_cast<IPLDirectEffectFlags>(params.flags | IPL_DIRECTEFFECTFLAGS_APPLYOCCLUSION);
     params.occlusion = _occAmnt;
+    break;
+  case SAD_GENERATE:
+    params.flags = static_cast<IPLDirectEffectFlags>(params.flags | IPL_DIRECTEFFECTFLAGS_APPLYOCCLUSION);
+    _occAmnt = params.occlusion;
+    break;
+  }
 
-    if (_transmission == SAD_USER) {//Transmission shouldn't be run without occlusion
+  if (_occlusion != SAD_USER) {//Transmission shouldn't be run without occlusion
+    switch (_transmission) {//Directivity
+    case SAD_USER:
       params.flags = static_cast<IPLDirectEffectFlags>(params.flags | IPL_DIRECTEFFECTFLAGS_APPLYTRANSMISSION);
       params.transmission[0] = _trans_amnt[0];
       params.transmission[1] = _trans_amnt[1];
       params.transmission[2] = _trans_amnt[2];
+      break;
+    case SAD_GENERATE:
+      params.flags = static_cast<IPLDirectEffectFlags>(params.flags | IPL_DIRECTEFFECTFLAGS_APPLYTRANSMISSION);
+      _trans_amnt[0] = params.transmission[0];
+      _trans_amnt[1] = params.transmission[1];
+      _trans_amnt[2] = params.transmission[2];
+      break;
     }
   }
 

@@ -130,6 +130,7 @@ protected:
     IPLCoordinateSpace3 sourceCoord;//They are a part of IPLSimulationInputs however, so they only exist here to be quickly sent to non-simulation effects.
 
     IPLSimulationInputs inputs;
+    IPLSimulationOutputs outputs;
 
     IPLSource source;//This will be done hackilly; see constructor function for details.
 
@@ -163,6 +164,7 @@ public:
 
   void force_simulator_commit();
 
+protected:
   struct SteamGlobalHolder {
   public:
     IPLAudioSettings* _audio_settings = nullptr;
