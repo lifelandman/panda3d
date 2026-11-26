@@ -17,7 +17,7 @@
 #include "typedObject.h"
 #include "pta_float.h"
 
-#include "luse.h.h"
+#include "luse.h"
 
 #include "steamAudioEffect.h"
 
@@ -32,8 +32,8 @@ PUBLISHED:
   SteamBinauralEffect();
   ~SteamBinauralEffect();
 
-  void set_binaural_direction(lVector3f direction);
-  lVector3f get_binaural_direction();
+  void set_binaural_direction(LVector3 direction);
+  LVector3 get_binaural_direction();
   void set_binaural_direction_auto();
 
   void set_spatial_blend(float blend);
@@ -41,7 +41,7 @@ PUBLISHED:
 
 protected:
   bool _directionCalculation;
-  lVector3f _direction;
+  LVector3 _direction;
 
   float _spatial_blend;
 

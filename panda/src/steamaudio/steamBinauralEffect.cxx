@@ -19,7 +19,7 @@
 
 #include <phonon.h>
 
-TypeHandle SteamAudioEffect::_type_handle;
+TypeHandle SteamBinauralEffect::_type_handle;
 
 //vars
 
@@ -36,13 +36,13 @@ SteamBinauralEffect(int frame_size, int sample_rate) :
   SteamAudioEffect()
 {
   _directionCalculation = true;
-  _direction = lVector3();
+  _direction = LVector3(0, 1, 0);
 
   _spatial_blend = 1.0f;
 
   //Ensure Steam Audio Context exists
-  if (!SteamAudioProcessor._steam_audio_active) {
-    SteamAudioProcessor tempProc = SteamAudioProcessor()
+  if (!(SteamAudioProcessor::_steam_audio_active)) {
+    SteamAudioProcessor tempProc = SteamAudioProcessor();
   }
 
   //create audio settings
@@ -57,7 +57,7 @@ SteamBinauralEffect(int frame_size, int sample_rate) :
   IPLHRTFSettings hrtfSettings{};
   hrtfSettings.type = IPL_HRTFTYPE_DEFAULT;
 
-  iplHRTFCreate(SteamAudioEffect._steamContext, audioSettings, &hrtfSettings, &_hrtf);
+  iplHRTFCreate(SteamAudioProcessor::_steamContext, &audioSettings, &hrtfSettings, &_hrtf);
 }
 
 /**
@@ -67,14 +67,14 @@ SteamBinauralEffect::
 SteamBinauralEffect() :
   SteamAudioEffect()
 {
-  SteamBinauralEffect(512, 44100)
+  SteamBinauralEffect(512, 44100);
 }
 
 /**
 *
 **/
 SteamBinauralEffect::
-~SteamBinauralEffect() {
+~SteamBinauralEffect() {//TODO:: implement
 
 }
 
@@ -86,12 +86,12 @@ SteamBinauralEffect::
 * Don't worry, I normalize the vector you pass in for you!
 **/
 void SteamBinauralEffect::
-set_binaural_direction(lVector3f direction) {
+set_binaural_direction(LVector3 direction) {
   _direction = direction.normalized();
   _directionCalculation = false;
 }
 
-lVector3f SteamBinauralEffect::
+LVector3 SteamBinauralEffect::
 get_binaural_direction() {
   return _direction;
 }
@@ -116,23 +116,6 @@ set_spatial_blend(float blend) {
 float SteamBinauralEffect::
 get_spatial_blend() {
   return _spatial_blend;
-}
-
-
-/**
-* If we're not active, we just skip this effect.
-**/
-void SteamBinauralEffect::
-set_active(bool val) {
-  _isActive = val;
-}
-
-/**
-*Retrieves the _is_active flag.
-**/
-bool SteamBinauralEffect::
-get_active() {
-  return _isActive;
 }
 
 /**
@@ -165,7 +148,8 @@ apply_effect(SteamAudioProcessor::SteamGlobalHolder* globals, IPLAudioBuffer& in
   IPLBinauralEffectParams params{};
 
   if (_directionCalculation) {
-    params.direction = iplCalculateRelativeDirection(*globals->_steam_context, (globals->source).sourcePos, globals->listenerPosition, globals->listener.sourceCoord.ahead, globals->listener.sourceCoord.up);
+    params.direction = iplCalculateRelativeDirection(*globals->_steam_context, globals->source->sourcePos, globals->listenerPosition, globals->listener->sourceCoord.ahead, globals->listener->sourceCoord.up);
+    //Todo::Set _direction from the calculated output
   }
   else {
     params.direction = IPLVector3{ _direction.get_x(), _direction.get_z(), -_direction.get_y() };//Steam Audio uses a different coordinate system
@@ -178,7 +162,7 @@ apply_effect(SteamAudioProcessor::SteamGlobalHolder* globals, IPLAudioBuffer& in
 
   params.peakDelays = nullptr;
 
-  iplBinauralEffectApply(effect, &params, inBuffer, outBuffer);
+  iplBinauralEffectApply(effect, &params, &inBuffer, &outBuffer);
 
   return outBuffer;
 }

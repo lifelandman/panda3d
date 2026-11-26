@@ -125,6 +125,7 @@ protected:
     friend class SteamAudioProcessor;
     friend class SteamAudioEffect;
     friend class SteamDirectEffect;
+    friend class SteamBinauralEffect;
 
     IPLVector3 sourcePos;//supprisingly, this and sourceCoord are not part of the source struct.
     IPLCoordinateSpace3 sourceCoord;//They are a part of IPLSimulationInputs however, so they only exist here to be quickly sent to non-simulation effects.
@@ -174,7 +175,7 @@ protected:
     int _samples = 0;
     source_properties* source = nullptr;
     IPLVector3 listenerPosition = IPLVector3{};
-    source_properties* listener = nullptr
+    source_properties* listener = nullptr;
   };
 
 public:

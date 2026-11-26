@@ -18,6 +18,8 @@
 #include "steamDirectEffect.h"
 #include "steamBinauralEffect.h"
 
+#include "steamAudioSceneNode.h"
+
 #include "pandaSystem.h"
 #include "dconfig.h"
 

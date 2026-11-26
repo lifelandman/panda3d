@@ -17,5 +17,6 @@
 #include "steamAudioEffect.h"
 #include "steamDirectEffect.h"
 #include "steamBinauralEffect.h"
+#include "steamAudioSceneNode.h"
 
 #endif /* STEAMUDIO_H */

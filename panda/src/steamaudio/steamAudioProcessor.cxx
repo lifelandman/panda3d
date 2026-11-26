@@ -23,7 +23,7 @@
 TypeHandle SteamAudioProcessor::_type_handle;
 
 bool SteamAudioProcessor::_steam_audio_active = false;
-_steamContext = IPLContext{};//temporary and invalid; constructed proper in processor construction
+IPLContext SteamAudioProcessor::_steamContext = IPLContext{};//temporary and invalid; constructed proper in processor construction
 
 
 /**
@@ -60,7 +60,7 @@ SteamAudioProcessor()
     _steamContext = IPLContext{};
     iplContextCreate(&contextSettings, &_steamContext);
 
-    _steam_audio_active = true
+    _steam_audio_active = true;
   }
 
   //create simulator
@@ -400,9 +400,9 @@ render_effects() {
   //grab outputs for each source
   for (auto s = _sources.begin(); s != _sources.end(); s++) {
     auto source = s->second.get();
-    iplSourceGetOutputs(*(source->source), source->inputs.flags, &(source->outputs));
+    iplSourceGetOutputs(source->source, source->inputs.flags, &(source->outputs));
   }
-  iplSourceGetOutputs(*(_listener.source), _listener.inputs.flags, &(_listener.outputs));//Get listener outputs
+  iplSourceGetOutputs(_listener.source, _listener.inputs.flags, &(_listener.outputs));//Get listener outputs
 
   //Apply the effects
   for (auto b1 = _buffers.begin(); b1 != _buffers.end(); b1++) {

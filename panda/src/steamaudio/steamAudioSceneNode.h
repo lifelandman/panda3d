@@ -37,9 +37,9 @@ PUBLISHED:
   SteamAudioSceneNode(std::string name);
   ~SteamAudioSceneNode();
 
-  void add_material(std::string name; float air_low, float air_mid, float air_hi, float scatter, float trans_lo, float trans_mid, float trans_hi);
+  void add_material(std::string name, float air_low, float air_mid, float air_hi, float scatter, float trans_lo, float trans_mid, float trans_hi);
 
-  void add_gemometry(const Geom geometry, std::string material);
+  void add_gemometry(Geom* geometry, std::string material);
 
   void add_scene(NodePath root);
 
@@ -56,9 +56,9 @@ protected:
   SteamMaterials _materials;
 
 private:
-  typedef std::pair<PT(Geom), std::string> meshBuildArg;
+  typedef std::pair<Geom*, std::string> meshBuildArg;
   typedef pvector<meshBuildArg> meshBuildArgs;
-  IPLStaticMesh build_mesh(meshBuildArgs args, LMatrix4* transform = nullptr);
+  IPLStaticMesh build_mesh(meshBuildArgs args, LMatrix4 transform = LMatrix4::ident_mat());
 
 public:
   static TypeHandle get_class_type() {
